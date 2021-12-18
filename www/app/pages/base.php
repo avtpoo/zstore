@@ -224,21 +224,26 @@ class Base extends \Zippy\Html\WebPage
     //вывод ошибки,  используется   в дочерних страницах
 
     public function setError($msg, $p1 = "", $p2 = "") {
+        $msg = str_replace("'","`",$msg) ;
+     
         $msg = Helper::l($msg, $p1, $p2);
         System::setErrorMsg($msg);
     }
 
     public function setSuccess($msg, $p1 = "", $p2 = "") {
+        $msg = str_replace("'","`",$msg) ;
         $msg = Helper::l($msg, $p1, $p2);
         System::setSuccessMsg($msg);
     }
 
     public function setWarn($msg, $p1 = "", $p2 = "") {
-        $msg = Helper::l($msg, $p1, $p2);
+         $msg = str_replace("'","`",$msg) ;
+       $msg = Helper::l($msg, $p1, $p2);
         System::setWarnMsg($msg);
     }
 
     public function setInfo($msg, $p1 = "", $p2 = "") {
+        $msg = str_replace("'","`",$msg) ;
         $msg = Helper::l($msg, $p1, $p2);
         System::setInfoMsg($msg);
     }
@@ -253,9 +258,9 @@ class Base extends \Zippy\Html\WebPage
         $this->_tvars['taskcnt'] = \App\Entity\Event::isNotClosedTask($user->user_id);
         $this->_tvars['alerterror'] = "";
         if (strlen(System::getErrorMsg()) > 0) {
-          //  $this->_tvars['alerterror'] = System::getErrorMsg();
+            $this->_tvars['alerterror'] = System::getErrorMsg();
 
-          //  $this->goAnkor('topankor');
+            $this->goAnkor('topankor');
 
 
         }
@@ -265,11 +270,12 @@ class Base extends \Zippy\Html\WebPage
 
         $user = System::getUser();
         if (strlen(System::getErrorMsg()) > 0) {
-            $this->addJavaScript("toastr.error('" . System::getErrorMsg() . "','',{'timeOut':'12000'})        ", true);
+            
+           // $this->addJavaScript("toastr.error('" . System::getErrorMsg() . "','',{'timeOut':'8000'})        ", true);
         }
 
         if (strlen(System::getWarnMsg()) > 0) {
-            $this->addJavaScript("toastr.warning('" . System::getWarnMsg() . "','',{'timeOut':'6000'})        ", true);
+            $this->addJavaScript("toastr.warning('" . System::getWarnMsg() . "','',{'timeOut':'4000'})        ", true);
         }
         if (strlen(System::getSuccesMsg()) > 0) {
             $this->addJavaScript("toastr.success('" . System::getSuccesMsg() . "','',{'timeOut':'2000'})        ", true);
