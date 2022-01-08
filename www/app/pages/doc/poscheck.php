@@ -176,7 +176,7 @@ class POSCheck extends \App\Pages\Base
 
                         $this->docform->salesource->setValue($basedoc->headerdata['salesource']);
                         $this->docform->pricetype->setValue($basedoc->headerdata['pricetype']);
-                        $this->docform->store->setValue($basedoc->headerdata['store']);
+                       // $this->docform->store->setValue($basedoc->headerdata['store']);
                         //  $this->docform->pos->setValue($basedoc->headerdata['pos']);
                         $this->_orderid = $basedocid;
                         $this->docform->order->setText($basedoc->document_number);
@@ -184,6 +184,8 @@ class POSCheck extends \App\Pages\Base
                         $notfound = array();
                         $order = $basedoc->cast();
 
+            
+                        
                         //проверяем  что уже есть продажа
                         $list = $order->getChildren('POSCheck');
 
@@ -196,6 +198,21 @@ class POSCheck extends \App\Pages\Base
                         $this->OnChangeCustomer($this->docform->customer);
                         $this->calcPay();
 
+                        if ($order->headerdata['payment'] > 0) {
+                            $this->docform->payment->setValue(0); // предоплата
+                            $this->docform->editpayed->setText(H::fa(0));
+                            $this->docform->payed->setText(H::fa(0));
+                            $this->docform->editpayamount->setText(H::fa(0));
+                            $this->docform->payamount->setText(H::fa(0));
+                            $this->docform->editpaydisc->setText(H::fa(0));
+                            $this->docform->paydisc->setText(H::fa(0));
+                        } else {
+                            $this->docform->editpayed->setText($this->docform->editpayamount->getText());
+                            $this->docform->payed->setText($this->docform->payamount->getText());
+
+                        }                        
+                        
+                        
                         $this->_itemlist = $basedoc->unpackDetails('detaildata');
                     }
 
@@ -514,8 +531,9 @@ class POSCheck extends \App\Pages\Base
         $pos = \App\Entity\Pos::load($this->_doc->headerdata['pos']);
 
         if ($this->_tvars["ppo"] == true && $pos->usefisc == 1 && $sender->id == 'execdoc') {
-
-
+            $this->_doc->headerdata["fiscalnumberpos"]  =  $pos->fiscalnumber;
+            
+                   
             $ret = \App\Modules\PPO\PPOHelper::check($this->_doc);
             if ($ret['success'] == false && $ret['doclocnumber'] > 0) {
                 //повторяем для  нового номера
@@ -537,6 +555,7 @@ class POSCheck extends \App\Pages\Base
                     return;
                 }
             }
+            
         }
 
 
@@ -834,6 +853,8 @@ class POSCheck extends \App\Pages\Base
         //очистка  списка  товаров
         $this->_itemlist = array();
         $this->docform->detail->Reload();
+        $this->calcTotal() ;
+        $this->calcPay() ;
     }
 
     public function OnChangeItem($sender) {
