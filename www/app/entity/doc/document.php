@@ -913,18 +913,17 @@ class Document extends \ZCL\DB\Entity
         if(strlen($url)==0)  return '';
        // $firm = \App\Entity\Firm::load($this->firm_id);
 
-        $writer = new \Endroid\QrCode\Writer\PngWriter();
- 
+     
       
         $qrCode = new \Endroid\QrCode\QrCode($url);
-        $qrCode->setSize(100);
+        $qrCode->setSize(120);
         $qrCode->setMargin(5);
-       // $qrCode->setWriterByName('png');
-
-        $result = $writer->write($qrCode );
-     
-        $dataUri = $result->getDataUri();
-        $img = "<img   src=\"{$dataUri}\"  />";
+       
+      //  $qrCode->setEncoding('UTF-8'); 
+   
+        $qr = 'data:image/png;base64,' . base64_encode($qrCode->writeString()) ;            
+         
+        $img = "<img   src=\"{$qr}\"  />";
 
         return $img;
     }
