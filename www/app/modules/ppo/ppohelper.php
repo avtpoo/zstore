@@ -87,7 +87,7 @@ class PPOHelper
 
                 $ret = curl_exec($request);
                 if (curl_errno($request) > 0) {
-                    $msg = curl_error($request);
+                    $msg = "sign server error: ".curl_error($request);
                     $msg = str_replace("'","\"",$msg) ;
                     return array('success' => false, 'data' => $msg);
                 }
@@ -171,7 +171,7 @@ class PPOHelper
                     
                     $ret = curl_exec($request);
                     if (curl_errno($request) > 0) {
-                        $msg = curl_error($request);
+                        $msg = "sign server error: ".curl_error($request);
                       $msg = str_replace("'","\"",$msg) ;
                         return array('success' => false, 'data' => $msg);
                     }
@@ -180,14 +180,14 @@ class PPOHelper
                     $ret = json_decode($ret);
                     if ($ret->success == false) {
                         $msg = $ret->error;
-       $msg = str_replace("'","\"",$msg) ;
+                        $msg = str_replace("'","\"",$msg) ;
                         return array('success' => false, 'data' => $ret->error);
                     }
 
                     $decrypted = base64_decode($ret->data);
 
                 } else {
-                    $decrypted = PPO::decrypt($return);
+                    $decrypted = PPO::decrypt($return,true );
 
                 }
 
@@ -381,8 +381,9 @@ class PPOHelper
      * отправка  чека
      *
      * @param mixed $doc
+     * @param mixed $delayfisc  отложить  фискализацию
      */
-    public static function check($doc) {
+    public static function check($doc,$delayfisc=false) {
 
 
         $pos = \App\Entity\Pos::load($doc->headerdata['pos']);
@@ -403,7 +404,8 @@ class PPOHelper
         $header['docnumber'] = $pos->fiscdocnumber;
         $header['posinner'] = $pos->fiscallocnumber;
         $header['posnumber'] = $pos->fiscalnumber;
-        $header['username'] = $doc->username;
+        $user = \App\Entity\User::load($doc->user_id);
+        $header['username'] = $user->username;
         $header['guid'] = \App\Util::guid();
 
         $header['disc'] = $doc->headerdata["paydisc"] > 0 ? number_format($doc->headerdata["paydisc"], 2, '.', '') : false;
@@ -529,13 +531,18 @@ class PPOHelper
         $xml = $report->generate($header);
         $xml = mb_convert_encoding($xml, "windows-1251", "utf-8");
         $firm = \App\Entity\Firm::load($pos->firm_id);
+        if($delayfisc) {
+             self::insertStat($pos->pos_id, 1, $amount0, $amount1, $amount2, $amount3, $doc->document_number,  1);
+             $ret['success'] = true ;
+        } else {
+            $ret = self::send($xml, 'doc', $firm);
+            if ($ret['success'] == true) {
 
-        $ret = self::send($xml, 'doc', $firm);
-        if ($ret['success'] == true) {
-
-            self::insertStat($pos->pos_id, 1, $amount0, $amount1, $amount2, $amount3, $doc->document_number);
+                self::insertStat($pos->pos_id, 1, $amount0, $amount1, $amount2, $amount3, $doc->document_number );
+            }
+            $doc->headerdata["fiscdts"] = "&date=".date('Ymd')."&time={$header['time']}&sum={$header['amount']}";
+                
         }
-        $doc->headerdata["fiscdts"] = "&date=".date('Ymd')."&time={$header['time']}&sum={$header['amount']}";
  
         return $ret;
     }
@@ -633,7 +640,8 @@ class PPOHelper
         $header['docnumber'] = $pos->fiscdocnumber;
         $header['posinner'] = $pos->fiscallocnumber;
         $header['posnumber'] = $pos->fiscalnumber;
-        $header['username'] = $doc->username;
+        $user = \App\Entity\User::load($doc->user_id);
+        $header['username'] = $user->username;
         $header['guid'] = \App\Util::guid();
         $amount0 = 0;
         $amount1 = 0;
@@ -691,13 +699,18 @@ class PPOHelper
     }
 
     //функции работы  со статистикой  для  z-отчета 
-    public static function insertStat($pos_id, $checktype, $amount0, $amount1, $amount2, $amount3, $document_number = '') {
+    public static function insertStat($pos_id, $checktype, $amount0, $amount1, $amount2, $amount3, $document_number = '', $tag=0) {
         $conn = \ZDB\DB::getConnect();
+        
+        if(strlen($document_number) >0) {
+             $conn->Execute("delete from ppo_zformstat  where   document_number=". $conn->qstr($document_number)); 
+        }
+        
         $amount0 = number_format($amount0, 2, '.', '');
         $amount1 = number_format($amount1, 2, '.', '');
         $amount2 = number_format($amount2, 2, '.', '');
         $amount3 = number_format($amount3, 2, '.', '');
-        $sql = "insert into ppo_zformstat (pos_id,checktype,  amount0,amount1,amount2,amount3,document_number,createdon) values ({$pos_id},{$checktype}, {$amount0}, {$amount1},{$amount2},{$amount3}," . $conn->qstr($document_number) . "," . $conn->DBDate(time()) . ")";
+        $sql = "insert into ppo_zformstat (pos_id,checktype,  amount0,amount1,amount2,amount3,document_number,createdon,tag) values ({$pos_id},{$checktype}, {$amount0}, {$amount1},{$amount2},{$amount3}," . $conn->qstr($document_number) . "," . $conn->DBDate(time()) . ",{$tag})";
 
         $conn->Execute($sql);
     }
@@ -716,7 +729,7 @@ class PPOHelper
     public static function getStat($pos_id, $ret = false) {
         $conn = \ZDB\DB::getConnect();
 
-        $sql = "select count(*) as cnt, coalesce(sum(amount0),0)  as amount0, coalesce(sum(amount1),0)  as amount1, coalesce(sum(amount2),0) as amount2, coalesce(sum(amount3),0) as amount3 from  ppo_zformstat where  pos_id=" . $pos_id;
+        $sql = "select count(*) as cnt, coalesce(sum(amount0),0)  as amount0, coalesce(sum(amount1),0)  as amount1, coalesce(sum(amount2),0) as amount2, coalesce(sum(amount3),0) as amount3 from  ppo_zformstat where tag = 0 and  pos_id=" . $pos_id;
         if ($ret == true) {
             $sql = $sql . "  and checktype =3"; //возврат
         } else {
@@ -742,10 +755,11 @@ class PPOHelper
     }
 
     public static function decrypt($data) {
-        return PPO::decrypt($data, true);
+        return PPO::decrypt($data, true);    
     }
-
-
+   
+    
+    
     /*
        public static function sign($data, $server, $port) {
 

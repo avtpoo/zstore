@@ -904,7 +904,9 @@ class Document extends \ZCL\DB\Entity
      * возвращает  тэг <img> со QR кодом ссылки на  сайт налоговой
      *
      */
-    protected function getQRCodeImage() {
+    
+    
+   protected function getQRCodeImage() {
         $print = System::getOption('common', 'printoutqrcode');
         if ($print == 0) {
             return '';
@@ -927,7 +929,8 @@ class Document extends \ZCL\DB\Entity
 
         return $img;
     }
-
+    
+    
     
     /**
     *    возвращает ссылку  на чек в  налоговой

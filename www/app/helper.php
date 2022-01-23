@@ -762,22 +762,21 @@ class Helper
     public static function sumstr($amount) {
         global $_config;
         $curr = \App\System::getOption('common', 'curr');
-
-        $totalstr = \App\Util::money2str_rugr($amount);
-        if ($curr == 'ru') {
-            $totalstr = \App\Util::money2str_ru($amount);
-        }
-        if ($curr == 'eu') {
-            $totalstr = \App\Util::money2str_eu($amount);
-        }
-        if ($curr == 'us') {
-            $totalstr = \App\Util::money2str_us($amount);
-        }
-
-
-        if ($_config['common']['lang'] == 'ua') {
+        $totalstr=false;
+    
+        if ($_config['common']['lang'] == 'ua' && $curr=='ua') {
             $totalstr = \App\Util::money2str_ua($amount);
+        }       
+        else {
+            if ($curr == 'ru') {
+                $totalstr = \App\Util::money2str_ru($amount);
+            }           
+            if ($curr == 'gr') {
+                $totalstr = \App\Util::money2str_rugr($amount);
+            }           
         }
+       
+       
 
 
         return $totalstr;
@@ -785,21 +784,10 @@ class Helper
 
     public static function getValList() {
         $val = \App\System::getOptions("val");
+        if(!is_array($val['vallist'])) $val['vallist'] = array();
         $list = array();
-        if ($val['valuan'] > 0 && $val['valuan'] != 1) {
-            $list['valuan'] = self::l('valuan');
-        }
-        if ($val['valusd'] > 0 && $val['valusd'] != 1) {
-            $list['valusd'] = self::l('valusd');
-        }
-        if ($val['valeuro'] > 0 && $val['valeuro'] != 1) {
-            $list['valeuro'] = self::l('valeuro');
-        }
-        if ($val['valrub'] > 0 && $val['valrub'] != 1) {
-            $list['valrub'] = self::l('valrub');
-        }
-        if ($val['valmdl'] > 0 && $val['valmdl'] != 1) {
-            $list['valmdl'] = self::l('valmdl');
+        foreach($val['vallist'] as $v){
+            $list[$v->code]= $v->name   ;
         }
 
         return $list;
@@ -920,7 +908,7 @@ class Helper
                    
        foreach($in as $k=>$v)     
        {
-           $out[] = array('id'=>$k,'name'=>$v) ;
+           $out[] = array('id'=>$k,'name'=>$v ) ;
        }            
        return $out  ;          
                        

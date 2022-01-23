@@ -65,10 +65,12 @@
                     <div class="navbar nav justify-content-start">
                         Штрих-код &nbsp;<input autocomplete="off" autofocus type="text" zippy="barcode" onkeydown="onBarCode()">
                         &nbsp; &nbsp; &nbsp; &nbsp;<a zippy="addcode" class="btn btn-info btn-sm">+</a>
+                        
+                         {{#usemobilescanner}}  
                         &nbsp; &nbsp; &nbsp; &nbsp; <i id="mobilescanner" data-toggle="modal" data-target="#modalscanner"
                                                        title="Сканувати  мобiльним пристроєм"
-                                                       style="display:none;cursor:pointer;font-size:28px" class="fa fa-mobile-alt"></i>
-
+                                                       style="cursor:pointer;font-size:28px" class="fa fa-mobile-alt"></i>
+                      {{/usemobilescanner}}  
                     </div>
                     {{/usescanner}}
                     &nbsp; <a zippy="addrow" class="btn  btn-info">Додати товар</a>
@@ -116,7 +118,7 @@
             </div>
             <div class="row">
                 <div class="col-12 col-md-6">
-                    <input type="button" value="Скасувати" zippy="backtolist" class="btn btn-light">
+                    <input type="button" value="Скасувати" zippy="backtolist" class="btn btn-outline-secondary">
                     &nbsp; <input zippy="savedoc" type="submit" value="Зберегти" class="btn   btn-outline-primary">
                     &nbsp;<input zippy="execdoc" type="submit" value="Провести" class="btn btn-primary  ">
 
@@ -156,7 +158,7 @@
 
                 <div class="form-group">
                     <input zippy="saverow" type="submit" value="Зберегти" class="btn  btn-outline-primary">&nbsp;<input
-                        type="button" zippy="cancelrow" value="Скасувати" class="btn   btn-light">
+                        type="button" zippy="cancelrow" value="Скасувати" class="btn   btn-outline-secondary">
                 </div>
             </div>
         </div>
@@ -341,17 +343,7 @@
      
     </script>
 
-       {{#usemobilescanner}}       
-     <script>      
-        
-            if (mobileCheck()) {
-                $('#mobilescanner').show();
-            } else {
-                $('#mobilescanner').hide();
-            }
-
-        </script>     
-         {{/usemobilescanner}}  
+ 
 </body>
 
 </html>

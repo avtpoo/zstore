@@ -20,6 +20,7 @@ use Zippy\Html\Form\Form;
 use Zippy\Html\Form\SubmitButton;
 use Zippy\Html\Form\TextArea;
 use Zippy\Html\Form\TextInput;
+use Zippy\Html\Form\CheckBox;
 use Zippy\Html\Label;
 use Zippy\Html\Panel;
 use Zippy\Html\Link\ClickLink;
@@ -104,8 +105,8 @@ class ARMPos extends \App\Pages\Base
 
         $this->docpanel->form2->add(new DataView('detail', new \Zippy\Html\DataList\ArrayDataSource(new \Zippy\Binding\PropertyBinding($this, '_itemlist')), $this, 'detailOnRow'));
         $this->docpanel->form2->add(new DataView('detailser', new \Zippy\Html\DataList\ArrayDataSource(new \Zippy\Binding\PropertyBinding($this, '_serlist')), $this, 'serOnRow'));
-        $this->docpanel->form2->add(new ClickLink('openshift', $this, 'OnOpenShift'));
-        $this->docpanel->form2->add(new ClickLink('closeshift', $this, 'OnCloseShift'));
+        $this->docpanel->add(new ClickLink('openshift', $this, 'OnOpenShift'));
+        $this->docpanel->add(new ClickLink('closeshift', $this, 'OnCloseShift'));
 
         //оплата
         $this->docpanel->add(new Form('form3'))->setVisible(false);
@@ -128,6 +129,7 @@ class ARMPos extends \App\Pages\Base
         $this->docpanel->form3->add(new TextInput('exchange'));
 
         $this->docpanel->form3->add(new Label('discount'));
+        $this->docpanel->form3->add(new CheckBox('passfisc'));
         //печать
         $this->docpanel->add(new Form('formcheck'))->setVisible(false);
         $this->docpanel->formcheck->add(new Label('showcheck'));
@@ -299,6 +301,8 @@ class ARMPos extends \App\Pages\Base
         $this->form1->setVisible(false);
         $this->docpanel->form2->setVisible(false);
         $this->docpanel->form3->setVisible(true);
+        $this->docpanel->form3->passfisc->setChecked(false);
+        
     }
 
     public function detailOnRow($row) {
@@ -916,6 +920,7 @@ class ARMPos extends \App\Pages\Base
         $this->_doc->headerdata['pricetype'] = $this->getPriveType();
 
         $this->_doc->firm_id = $this->pos->firm_id;
+        $this->_doc->username =System::getUser()->username;
 
         $firm = H::getFirmData($this->_doc->firm_id);
         $this->_doc->headerdata["firm_name"] = $firm['firm_name'];
@@ -945,30 +950,38 @@ class ARMPos extends \App\Pages\Base
             }
 
             if ($this->pos->usefisc == 1 && $this->_tvars['ppo'] == true) {
-                $this->_doc->headerdata["fiscalnumberpos"]  =  $pos->fiscalnumber;
- 
+              
+                if($this->docpanel->form3->passfisc->isChecked()) {
+                      $ret = \App\Modules\PPO\PPOHelper::check($this->_doc,true);
+  
+                }   else {
+              
+              
+                    $this->_doc->headerdata["fiscalnumberpos"]  = $this->pos->fiscalnumber;
+     
 
-                $ret = \App\Modules\PPO\PPOHelper::check($this->_doc);
-                if ($ret['success'] == false && $ret['doclocnumber'] > 0) {
-                    //повторяем для  нового номера
-                    $this->pos->fiscdocnumber = $ret['doclocnumber'];
-                    $this->pos->save();
                     $ret = \App\Modules\PPO\PPOHelper::check($this->_doc);
-                }
-                if ($ret['success'] == false) {
-                    $this->setErrorTopPage($ret['data']);
-                     $conn->RollbackTrans();
-                    return;
-                } else {
-                    //  $this->setSuccess("Выполнено") ;
-                    if ($ret['docnumber'] > 0) {
-                        $this->pos->fiscdocnumber = $ret['doclocnumber'] + 1;
+                    if ($ret['success'] == false && $ret['doclocnumber'] > 0) {
+                        //повторяем для  нового номера
+                        $this->pos->fiscdocnumber = $ret['doclocnumber'];
                         $this->pos->save();
-                        $this->_doc->headerdata["fiscalnumber"] = $ret['docnumber'];
-                    } else {
-                        $this->setError("ppo_noretnumber");
+                        $ret = \App\Modules\PPO\PPOHelper::check($this->_doc);
+                    }
+                    if ($ret['success'] == false) {
+                        $this->setErrorTopPage($ret['data']);
                          $conn->RollbackTrans();
                         return;
+                    } else {
+                        //  $this->setSuccess("Выполнено") ;
+                        if ($ret['docnumber'] > 0) {
+                            $this->pos->fiscdocnumber = $ret['doclocnumber'] + 1;
+                            $this->pos->save();
+                            $this->_doc->headerdata["fiscalnumber"] = $ret['docnumber'];
+                        } else {
+                            $this->setError("ppo_noretnumber");
+                             $conn->RollbackTrans();
+                            return;
+                        }
                     }
                 }
             }
@@ -991,6 +1004,7 @@ class ARMPos extends \App\Pages\Base
         $this->docpanel->form3->customer->setText('');
         $this->docpanel->form3->payment->setValue(H::getDefMF());
         $this->docpanel->form3->setVisible(false);
+        $this->docpanel->form2->setVisible(false);
         $this->docpanel->formcheck->setVisible(true);
         $this->docpanel->form3->notes->setText('');
         $check = $this->_doc->generatePosReport();

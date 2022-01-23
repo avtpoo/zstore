@@ -138,8 +138,15 @@
                                                    onkeydown="onBarCode()"> &nbsp;<a zippy="addcode" class="btn btn-info btn-sm mr-4">+</a>
 
                             {{/usescanner}}
-
+                           {{#ppo}}
+                
+                        <a zippy="openshift"><i class="fa fa-bullhorn"/> Вiдкрити змiну</a>
+                        &nbsp;  &nbsp; <a zippy="closeshift"><i class="fa fa-gavel"/> Закрити змiну</a>
+                        
+             
+                           {{/ppo}}
                         </form> 
+
                     </div>           
 
                     <form zippy="listsform" >  
@@ -334,7 +341,13 @@
                             <div class="form-group   ">
                                 <a zippy="bbackitems" class="btn btn-outline-info"> &lt; Назад</a>
 
-                                &nbsp;&nbsp; <input zippy="btocheck" type="submit" value="Печать чека > "   class="btn btn-success">
+                                &nbsp;&nbsp; <input zippy="btocheck" type="submit" value="Друкувати  чек > "   class="btn btn-success">
+                                     {{#ppo}}
+                            &nbsp;&nbsp;<input zippy="passfisc" type="checkbox"> Вiдкласти  фiскализацiю  
+                           <i class="fa fa-info-circle  " data-toggle="tooltip" data-placement="top"
+                                   title="На випадок збою інтернету фіскалізацію можна пропустити. Чек може бути фіскалізований ДО закриття зміни на сторінці ручного закриття зміни в модулі РРО "></i>
+                                              
+                            {{/ppo}}                             
                             </div>
                         </div>
 
@@ -481,7 +494,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editphone">Телефон</label>
-                        <input class="form-control" type="text" zippy="editphone"/>
+                        <input pattern="[0-9]+" class="form-control" type="text" zippy="editphone"/>
                     </div>
                     <div class="form-group">
                         <label for="editaddress">Адреса</label>
@@ -491,7 +504,7 @@
 
                     <div class="form-group">
                         <input zippy="savecust" type="submit" value="Зберегти" class="btn btn-outline-primary">
-                        <input type="button" zippy="cancelcust" value="Вiдмiнити" class="btn btn-light ">
+                        <input type="button" zippy="cancelcust" value="Вiдмiнити" class="btn btn-outline-secondary ">
                     </div>
                 </div>
             </div>

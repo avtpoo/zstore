@@ -139,7 +139,7 @@ class GoodsIssue extends Document
                         $itemp->quantity = $item->quantity * $part->qty;
 
                         if (false == $itemp->checkMinus($itemp->quantity, $this->headerdata['store'])) {
-                            throw new \Exception(\App\Helper::l("nominus", $itemp->quantity, $itemp->itemname));
+                            throw new \Exception(H::l("nominus", H::fqty($itemp->getQuantity($this->headerdata['store'])), $itemp->itemname));
                         }
 
                         $listst = \App\Entity\Stock::pickup($this->headerdata['store'], $itemp);
@@ -147,6 +147,7 @@ class GoodsIssue extends Document
                         foreach ($listst as $st) {
                             $sc = new Entry($this->document_id, 0 - $st->quantity * $st->partion, 0 - $st->quantity);
                             $sc->setStock($st->stock_id);
+                            $sc->tag=-3;
 
                             $sc->save();
                         }
@@ -163,12 +164,13 @@ class GoodsIssue extends Document
 
                 $sc = new Entry($this->document_id, $item->quantity * $price, $item->quantity);
                 $sc->setStock($stock->stock_id);
+                $sc->tag=-4;
 
                 $sc->save();
             }
 
             if (false == $item->checkMinus($item->quantity, $this->headerdata['store'])) {
-                throw new \Exception(\App\Helper::l("nominus", $item->quantity, $item->itemname));
+                throw new \Exception(H::l("nominus", H::fqty($item->getQuantity($this->headerdata['store'])), $item->itemname));
             }
 
             //продажа
@@ -179,6 +181,7 @@ class GoodsIssue extends Document
                 $sc->setStock($st->stock_id);
                 //   $sc->setExtCode($item->price * $k - $st->partion); //Для АВС
                 $sc->setOutPrice($item->price * $k);
+                $sc->tag=-1;
                 $sc->save();
                 $amount += $item->price * $k * $st->quantity;
             }
